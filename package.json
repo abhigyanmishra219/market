@@ -9,9 +9,17 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@auth/mongodb-adapter": "^3.11.3",
+    "@tailwindcss/postcss": "^4.3.3",
+    "lucide-react": "^1.58.0",
+    "mongoose": "^9.11.2",
     "next": "16.4.2",
+    "next-auth": "^5.0.0-beta.32",
+    "postcss": "^8.5.30",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "tailwindcss": "^4.3.3",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^20",
