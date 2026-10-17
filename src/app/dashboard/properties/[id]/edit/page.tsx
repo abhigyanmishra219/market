@@ -15,8 +15,7 @@ interface EditPropertyPageProps {
   params: Promise<{ id: string }>;
 }
 
-export async function generateMetadata({ params }: EditPropertyPageProps): Promise<Metadata> {
-  const { id } = await params;
+export async function generateMetadata(): Promise<Metadata> {
   return {
     title: `Edit Property Listing — Dashboard`,
     description: "Update your property details, photos, or pricing.",

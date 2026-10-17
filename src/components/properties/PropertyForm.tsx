@@ -27,12 +27,12 @@ import {
   ArrowLeft,
   Save,
   Send,
-  Eye,
   Lock,
 } from "lucide-react";
 
 interface PropertyFormProps {
-  initialData?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  initialData?: Record<string, any>;
   isEditing?: boolean;
   listingId?: string;
   defaultCityName?: string;
@@ -139,7 +139,7 @@ export function PropertyForm({
 
   // Location
   const [city, setCity] = useState(initialData?.location?.city || defaultCityName);
-  const [cityCode, setCityCode] = useState(initialData?.location?.cityCode || defaultCityCode);
+  const [cityCode] = useState(initialData?.location?.cityCode || defaultCityCode);
   const [locality, setLocality] = useState(initialData?.location?.locality || "");
   const [streetAddress, setStreetAddress] = useState(initialData?.location?.streetAddress || "");
 
@@ -824,7 +824,7 @@ export function PropertyForm({
                     onChange={(e) => setShowPhone(e.target.checked)}
                     className="rounded text-forest-green focus:ring-forest-green"
                   />
-                  <span>Display "Call Owner" button on listing</span>
+                  <span>Display &quot;Call Owner&quot; button on listing</span>
                 </label>
 
                 <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-dark-text select-none">
@@ -834,7 +834,7 @@ export function PropertyForm({
                     onChange={(e) => setShowWhatsapp(e.target.checked)}
                     className="rounded text-forest-green focus:ring-forest-green"
                   />
-                  <span>Display "WhatsApp" enquiry button</span>
+                  <span>Display &quot;WhatsApp&quot; enquiry button</span>
                 </label>
               </div>
             </div>

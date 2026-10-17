@@ -8,7 +8,7 @@ import { connectToDatabase } from "@/lib/db";
 import { Listing } from "@/models/Listing";
 import { OwnerPropertyList, OwnerPropertyItem } from "@/components/properties/OwnerPropertyList";
 import { Button } from "@/components/ui/Button";
-import { PlusCircle, Building2, ChevronRight, Home } from "lucide-react";
+import { PlusCircle, ChevronRight, Home } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "My Properties — Owner Dashboard",

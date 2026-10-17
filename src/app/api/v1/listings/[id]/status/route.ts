@@ -4,7 +4,7 @@ import { connectToDatabase } from "@/lib/db";
 import { Listing } from "@/models/Listing";
 import { apiSuccess, handleRouteError } from "@/lib/api-response";
 import { NotFoundError, ForbiddenError, ValidationError } from "@/lib/errors";
-import { requireAuth, assertOwnership } from "@/lib/auth-guards";
+import { requireAuth } from "@/lib/auth-guards";
 import { listingStatusTransitionSchema } from "@/lib/validations/listing";
 
 export async function PATCH(

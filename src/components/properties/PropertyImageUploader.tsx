@@ -2,7 +2,6 @@
 
 import React, { useState, useRef } from "react";
 import Image from "next/image";
-import { Button } from "@/components/ui/Button";
 import { ListingPhotoInput } from "@/lib/validations/listing";
 import { UploadCloud, X, Star, AlertCircle, Loader2 } from "lucide-react";
 
