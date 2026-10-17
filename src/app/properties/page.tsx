@@ -19,6 +19,8 @@ export const metadata: Metadata = {
     "Explore verified residential apartments, independent houses, villas, and PG accommodations with direct phone and WhatsApp contact.",
 };
 
+export const instant = false;
+
 interface PropertiesPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }

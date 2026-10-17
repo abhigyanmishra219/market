@@ -19,6 +19,8 @@ export const metadata: Metadata = {
     "Find certified plumbers, electricians, deep cleaners, and technicians in your city with direct phone and WhatsApp contact.",
 };
 
+export const instant = false;
+
 interface ServicesPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }

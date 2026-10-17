@@ -5,6 +5,7 @@ import { Metadata } from "next";
 import { getPublicListingByIdOrSlug } from "@/lib/listings-data";
 import { getCurrentSession } from "@/lib/auth-guards";
 import { ServiceDetailClient } from "@/components/listings/ServiceDetailClient";
+import { ReportListingButton } from "@/components/listings/ReportListingButton";
 import { Badge } from "@/components/ui/Badge";
 import { formatCurrency } from "@/lib/utils";
 import {
@@ -13,12 +14,13 @@ import {
   Calendar,
   MapPin,
   ShieldCheck,
-  Flag,
   ChevronRight,
   Home,
   CheckCircle2,
   Award,
 } from "lucide-react";
+
+export const instant = false;
 
 interface ServiceDetailPageProps {
   params: Promise<{ id: string }>;
@@ -366,14 +368,7 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
 
             {/* Report listing */}
             <div className="pt-2 text-center">
-              <button
-                type="button"
-                onClick={() => alert("Report listing feature is logged for moderation.")}
-                className="inline-flex items-center gap-1 text-xs text-muted-text hover:text-red-600 transition-colors"
-              >
-                <Flag className="w-3 h-3" />
-                <span>Report this listing</span>
-              </button>
+              <ReportListingButton listingId={listing.id} />
             </div>
           </div>
         </div>

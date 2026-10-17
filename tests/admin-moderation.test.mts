@@ -4,11 +4,12 @@ import mongoose from "mongoose";
 import { connectToDatabase, disconnectFromDatabase } from "@/lib/db";
 import { User } from "@/models/User";
 import { Listing } from "@/models/Listing";
-import { requireAuth, requireAdmin, assertOwnership } from "@/lib/auth-guards";
+import { assertOwnership } from "@/lib/auth-guards";
 import { updateProfileSchema } from "@/lib/validations/user";
 import { listingStatusTransitionSchema } from "@/lib/validations/listing";
 import { getPublicListings } from "@/lib/listings-data";
-import { UnauthorizedError, ForbiddenError, ValidationError } from "@/lib/errors";
+import { ForbiddenError } from "@/lib/errors";
+import type { Session } from "next-auth";
 
 // Load environment variables from .env.local
 const envPath = path.resolve(process.cwd(), ".env.local");
@@ -143,7 +144,7 @@ async function runAdminModerationTestSuite() {
     // ---------------------------------------------------------------------------
     console.log("\n--- Group 3: Server-Side Authorization & Access Control ---");
 
-    const normalUserSession = {
+    const normalUserSession: Session = {
       user: {
         id: normalUser._id.toString(),
         email: normalUser.email,
@@ -154,7 +155,7 @@ async function runAdminModerationTestSuite() {
       expires: new Date(Date.now() + 86400000).toISOString(),
     };
 
-    const adminUserSession = {
+    const adminUserSession: Session = {
       user: {
         id: adminUser._id.toString(),
         email: adminUser.email,
@@ -189,7 +190,7 @@ async function runAdminModerationTestSuite() {
     // Ownership vs Admin assertion
     let ownerEditAllowed = false;
     try {
-      assertOwnership(normalUser._id, normalUserSession as any);
+      assertOwnership(normalUser._id, normalUserSession);
       ownerEditAllowed = true;
     } catch {
       ownerEditAllowed = false;
@@ -198,9 +199,10 @@ async function runAdminModerationTestSuite() {
 
     let foreignUserEditBlocked = false;
     try {
-      assertOwnership(nonAdminUser._id, normalUserSession as any);
-    } catch (err: any) {
-      if (err?.name === "ForbiddenError" || err?.statusCode === 403 || err instanceof ForbiddenError) {
+      assertOwnership(nonAdminUser._id, normalUserSession);
+    } catch (err: unknown) {
+      const e = err as { name?: string; statusCode?: number };
+      if (e?.name === "ForbiddenError" || e?.statusCode === 403 || err instanceof ForbiddenError) {
         foreignUserEditBlocked = true;
       }
     }
@@ -208,7 +210,7 @@ async function runAdminModerationTestSuite() {
 
     let adminGlobalEditAllowed = false;
     try {
-      assertOwnership(normalUser._id, adminUserSession as any);
+      assertOwnership(normalUser._id, adminUserSession);
       adminGlobalEditAllowed = true;
     } catch {
       adminGlobalEditAllowed = false;
@@ -306,7 +308,6 @@ async function runAdminModerationTestSuite() {
     // Owner cannot approve their own listing
     let ownerSelfApproveBlocked = false;
     try {
-      const isOwner = propertyListing.ownerId.toString() === normalUser._id.toString();
       const isAdmin = normalUserSession.user.role === "ADMIN";
       const targetStatus = "APPROVED";
       if (!isAdmin && targetStatus === "APPROVED") {

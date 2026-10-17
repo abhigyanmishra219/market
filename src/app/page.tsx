@@ -25,6 +25,8 @@ import {
   Inbox,
 } from "lucide-react";
 
+export const instant = false;
+
 export default async function HomePage() {
   await connection();
   const cityName = process.env.NEXT_PUBLIC_LAUNCH_CITY_NAME || "Launch City";
