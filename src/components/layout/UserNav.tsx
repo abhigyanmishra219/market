@@ -10,6 +10,8 @@ import {
   LayoutDashboard,
   Building2,
   Wrench,
+  CalendarCheck,
+  Inbox,
   ShieldCheck,
   LogOut,
   LogIn,
@@ -143,6 +145,24 @@ export function UserNav() {
             >
               <Wrench className="w-4 h-4 text-purple-700" />
               <span>My Services</span>
+            </Link>
+
+            <Link
+              href="/dashboard/my-bookings"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-dark-text hover:bg-light-purple/30 transition-colors"
+            >
+              <CalendarCheck className="w-4 h-4 text-purple-700" />
+              <span>My Bookings</span>
+            </Link>
+
+            <Link
+              href="/dashboard/bookings"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-dark-text hover:bg-light-green/30 transition-colors"
+            >
+              <Inbox className="w-4 h-4 text-forest-green" />
+              <span>Incoming Bookings</span>
             </Link>
 
             {/* Admin Portal Link (Only rendered for authorized ADMIN role) */}

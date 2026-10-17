@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
 import { getPublicListingByIdOrSlug } from "@/lib/listings-data";
+import { getCurrentSession } from "@/lib/auth-guards";
 import { ServiceDetailClient } from "@/components/listings/ServiceDetailClient";
 import { Badge } from "@/components/ui/Badge";
 import { formatCurrency } from "@/lib/utils";
@@ -52,11 +53,19 @@ export async function generateMetadata({ params }: ServiceDetailPageProps): Prom
 
 export default async function ServiceDetailPage({ params }: ServiceDetailPageProps) {
   const { id } = await params;
-  const listing = await getPublicListingByIdOrSlug(id);
+  const [listing, session] = await Promise.all([
+    getPublicListingByIdOrSlug(id),
+    getCurrentSession(),
+  ]);
 
   if (!listing || listing.type !== "SERVICE") {
     notFound();
   }
+
+  const isOwner =
+    session?.user?.id && listing.owner?.id
+      ? session.user.id === listing.owner.id
+      : false;
 
   const details = listing.serviceDetails;
 
@@ -331,8 +340,17 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
             <ServiceDetailClient
               listingId={listing.id}
               title={listing.title}
+              locality={listing.location.locality}
+              categoryLabel={
+                details?.category ? categoryLabels[details.category] || details.category : undefined
+              }
+              startingPrice={details?.startingPrice}
+              pricingModel={details?.pricingModel}
               showPhone={listing.contactPreferences.showPhone}
               showWhatsapp={listing.contactPreferences.showWhatsapp}
+              isLoggedIn={Boolean(session?.user)}
+              isOwner={Boolean(isOwner)}
+              userPhone={session?.user?.phone || null}
             />
 
             {/* Marketplace Quality Guarantee */}

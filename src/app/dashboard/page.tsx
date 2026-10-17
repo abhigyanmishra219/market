@@ -6,13 +6,14 @@ import { requirePageAuth } from "@/lib/auth-guards";
 import { connectToDatabase } from "@/lib/db";
 import mongoose from "mongoose";
 import { Listing } from "@/models/Listing";
+import { Booking } from "@/models/Booking";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import {
   Building2,
   Wrench,
-  Bookmark,
   CalendarCheck,
+  Inbox,
   PlusCircle,
   User as UserIcon,
   ArrowRight,
@@ -29,7 +30,7 @@ export default async function DashboardPage() {
   const { user } = session;
 
   await connectToDatabase();
-  const [propertyCount, serviceCount] = await Promise.all([
+  const [propertyCount, serviceCount, customerBookingCount, incomingBookingCount] = await Promise.all([
     Listing.countDocuments({
       ownerId: new mongoose.Types.ObjectId(user.id),
       type: "PROPERTY",
@@ -39,6 +40,13 @@ export default async function DashboardPage() {
       ownerId: new mongoose.Types.ObjectId(user.id),
       type: "SERVICE",
       status: { $ne: "ARCHIVED" },
+    }),
+    Booking.countDocuments({
+      customerId: new mongoose.Types.ObjectId(user.id),
+    }),
+    Booking.countDocuments({
+      providerId: new mongoose.Types.ObjectId(user.id),
+      status: { $in: ["PENDING", "ACCEPTED", "ALTERNATIVE_PROPOSED"] },
     }),
   ]);
 
@@ -120,25 +128,41 @@ export default async function DashboardPage() {
           <ArrowRight className="w-4 h-4 text-muted-text group-hover:text-purple-700 group-hover:translate-x-0.5 transition-all" />
         </Link>
 
-        <div className="rounded-xl border border-border-subtle bg-white p-5 shadow-xs flex items-center gap-4 opacity-75">
-          <div className="p-3 rounded-lg bg-emerald-50 text-emerald-800">
-            <CalendarCheck className="w-6 h-6" />
+        <Link
+          href="/dashboard/my-bookings"
+          className="rounded-xl border border-border-subtle bg-white p-5 shadow-xs flex items-center justify-between hover:border-forest-green hover:shadow-sm transition-all group"
+        >
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-lg bg-emerald-50 text-emerald-800 group-hover:scale-105 transition-transform">
+              <CalendarCheck className="w-6 h-6" />
+            </div>
+            <div>
+              <span className="text-xs text-muted-text font-medium">My Bookings</span>
+              <h3 className="text-xl font-bold text-dark-text">
+                {customerBookingCount} {customerBookingCount === 1 ? "Booking" : "Bookings"}
+              </h3>
+            </div>
           </div>
-          <div>
-            <span className="text-xs text-muted-text font-medium">Bookings</span>
-            <h3 className="text-xl font-bold text-dark-text">0 Pending</h3>
-          </div>
-        </div>
+          <ArrowRight className="w-4 h-4 text-muted-text group-hover:text-forest-green group-hover:translate-x-0.5 transition-all" />
+        </Link>
 
-        <div className="rounded-xl border border-border-subtle bg-white p-5 shadow-xs flex items-center gap-4 opacity-75">
-          <div className="p-3 rounded-lg bg-off-white text-dark-text border border-border-subtle">
-            <Bookmark className="w-6 h-6" />
+        <Link
+          href="/dashboard/bookings"
+          className="rounded-xl border border-border-subtle bg-white p-5 shadow-xs flex items-center justify-between hover:border-purple-600 hover:shadow-sm transition-all group"
+        >
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-lg bg-light-green text-forest-green group-hover:scale-105 transition-transform">
+              <Inbox className="w-6 h-6" />
+            </div>
+            <div>
+              <span className="text-xs text-muted-text font-medium">Incoming Requests</span>
+              <h3 className="text-xl font-bold text-dark-text">
+                {incomingBookingCount} {incomingBookingCount === 1 ? "Request" : "Requests"}
+              </h3>
+            </div>
           </div>
-          <div>
-            <span className="text-xs text-muted-text font-medium">Saved Items</span>
-            <h3 className="text-xl font-bold text-dark-text">0 Saved</h3>
-          </div>
-        </div>
+          <ArrowRight className="w-4 h-4 text-muted-text group-hover:text-purple-700 group-hover:translate-x-0.5 transition-all" />
+        </Link>
       </div>
 
       {/* Two-Column Action Cards */}

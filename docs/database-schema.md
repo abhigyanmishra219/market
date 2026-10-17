@@ -277,16 +277,18 @@ Tracks appointment requests initiated by customers for service listings.
 | `customerId` | `ObjectId` | Yes | - | Ref: `users._id` | Customer requesting the booking. |
 | `providerId` | `ObjectId` | Yes | - | Ref: `users._id` | Professional providing the service. |
 | `listingId` | `ObjectId` | Yes | - | Ref: `listings._id` | The booked service listing. |
-| `status` | `String` | Yes | `'REQUESTED'` | Enum: `['REQUESTED', 'CONFIRMED', 'RESCHEDULE_PROPOSED', 'DECLINED', 'CANCELLED', 'COMPLETED']` | State of booking lifecycle. |
-| `requestedDate` | `Date` | Yes | - | Must be >= current date | Date service is requested. |
-| `timeSlot` | `String` | Yes | - | Enum: `['MORNING', 'AFTERNOON', 'EVENING']` or specific time | Preferred time window. |
-| `rescheduleDetails`| `Object`| No | `null` | Subdocument | Populated if provider proposes alternative time. |
-| `rescheduleDetails.proposedDate` | `Date` | No | - | Proposed new date. |
-| `rescheduleDetails.proposedSlot` | `String` | No | - | Proposed new time slot. |
-| `rescheduleDetails.note` | `String` | No | - | Provider explanation. |
+| `status` | `String` | Yes | `'PENDING'` | Enum: `['PENDING', 'ACCEPTED', 'REJECTED', 'ALTERNATIVE_PROPOSED', 'CANCELLED', 'COMPLETED']` (Aliases: `REQUESTED`, `CONFIRMED`, `DECLINED`, `RESCHEDULE_PROPOSED`) | State of booking lifecycle. |
+| `requestedDate` | `Date` | Yes | - | Must be future date within 60 days | Date service is requested. |
+| `timeSlot` | `String` | Yes | - | Enum: `['MORNING', 'AFTERNOON', 'EVENING']` or specific time string | Preferred time window. |
+| `alternativeDetails`| `Object`| No | `null` | Subdocument | Populated if provider proposes alternative time. |
+| `alternativeDetails.proposedDate` | `Date` | No | - | Proposed new date. |
+| `alternativeDetails.proposedSlot` | `String` | No | - | Proposed new time slot. |
+| `alternativeDetails.note` | `String` | No | - | Provider explanation. |
+| `alternativeDetails.proposedAt` | `Date` | No | Auto | Timestamp when proposal was submitted. |
 | `serviceAddress` | `Object` | Yes | - | Address where service is to be rendered. |
 | `serviceAddress.line1` | `String` | Yes | - | House/Flat number, Street name. |
 | `serviceAddress.locality`| `String` | Yes | - | Locality / Area. |
+| `serviceAddress.city` | `String` | No | `null` | City name. |
 | `customerNotes` | `String` | No | `null` | Max 1000 chars | Description of the problem or task scope. |
 | `customerPhone` | `String` | Yes | - | Contact phone for technician visit. |
 | `providerNotes` | `String` | No | `null` | Max 1000 chars | Provider's internal notes or decline reason. |
@@ -297,7 +299,8 @@ Tracks appointment requests initiated by customers for service listings.
 **Indexes**:
 - `{ customerId: 1, status: 1, requestedDate: -1 }` (Customer booking list)
 - `{ providerId: 1, status: 1, requestedDate: -1 }` (Provider booking queue)
-- `{ listingId: 1 }`
+- `{ listingId: 1, status: 1 }`
+- `{ createdAt: -1 }`
 
 ---
 

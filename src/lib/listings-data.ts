@@ -293,6 +293,7 @@ export async function getPublicListingByIdOrSlug(idOrSlug: string) {
       serviceDetails: doc.serviceDetails,
       owner: owner
         ? {
+            id: owner._id ? owner._id.toString() : doc.ownerId.toString(),
             name: owner.name,
             image: owner.image,
             memberSince: owner.createdAt ? new Date(owner.createdAt).toISOString() : undefined,

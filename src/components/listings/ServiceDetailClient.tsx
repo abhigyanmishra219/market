@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { BookingModal } from "@/components/bookings/BookingModal";
 import {
   Phone,
   MessageSquare,
@@ -11,30 +12,43 @@ import {
   Loader2,
   ShieldAlert,
   Heart,
-  Info,
 } from "lucide-react";
 
 interface ServiceDetailClientProps {
   listingId: string;
   title: string;
+  locality?: string;
+  categoryLabel?: string;
+  startingPrice?: number;
+  pricingModel?: string;
   showPhone: boolean;
   showWhatsapp: boolean;
   initialPhone?: string | null;
+  isLoggedIn?: boolean;
+  isOwner?: boolean;
+  userPhone?: string | null;
 }
 
 export function ServiceDetailClient({
   listingId,
   title,
+  locality = "Metropolis",
+  categoryLabel,
+  startingPrice,
+  pricingModel,
   showPhone,
   showWhatsapp,
   initialPhone,
+  isLoggedIn = false,
+  isOwner = false,
+  userPhone,
 }: ServiceDetailClientProps) {
   const [revealing, setRevealing] = useState(false);
   const [phone, setPhone] = useState<string | null>(initialPhone || null);
   const [whatsappLink, setWhatsappLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [bookingNotice, setBookingNotice] = useState(false);
+  const [isBookingOpen, setIsBookingOpen] = useState(false);
 
   const handleRevealOrCall = async () => {
     if (phone) {
@@ -105,38 +119,31 @@ export function ServiceDetailClient({
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Booking Notice Modal / Banner */}
-      {bookingNotice && (
-        <div className="p-3.5 rounded-xl bg-light-purple border border-purple-200 text-xs text-purple-950 flex flex-col gap-2">
-          <div className="flex items-start gap-2">
-            <Info className="w-4 h-4 text-purple-800 shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <strong className="block font-semibold">Online Booking Request Workflow</strong>
-              <p className="mt-0.5 text-purple-900 leading-relaxed">
-                Structured calendar appointment requests activate in Phase W6. In the meantime, connect directly with this provider via direct phone call or WhatsApp for immediate scheduling.
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setBookingNotice(false)}
-            className="text-[11px] font-semibold text-purple-900 hover:underline self-end"
-          >
-            Dismiss
-          </button>
-        </div>
-      )}
-
-      {/* Primary Action: Book or Contact */}
+      {/* Primary Action: Request Booking Modal */}
       <Button
         variant="service"
         size="lg"
         leftIcon={<CalendarCheck className="w-4 h-4" />}
-        onClick={() => setBookingNotice(true)}
+        onClick={() => setIsBookingOpen(true)}
         className="w-full justify-center text-sm font-semibold shadow-xs"
       >
         Request Service Booking
       </Button>
+
+      {/* Booking Modal Dialog */}
+      <BookingModal
+        isOpen={isBookingOpen}
+        onClose={() => setIsBookingOpen(false)}
+        listingId={listingId}
+        listingTitle={title}
+        locality={locality}
+        categoryLabel={categoryLabel}
+        startingPrice={startingPrice}
+        pricingModel={pricingModel}
+        isLoggedIn={isLoggedIn}
+        isOwner={isOwner}
+        initialPhone={userPhone}
+      />
 
       {/* Call Provider */}
       {showPhone ? (

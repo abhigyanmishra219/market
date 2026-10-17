@@ -303,36 +303,28 @@ Every response from `/api/v1/` adheres to a standard envelope.
 - **Auth**: Authenticated User.
 - **Query Parameters**:
   - `role`: `'customer'` (default) | `'provider'`.
-  - `status`: Optional status filter.
+  - `status`: Optional status filter (`PENDING`, `ACCEPTED`, `ALTERNATIVE_PROPOSED`, `CANCELLED`, `COMPLETED`, `REJECTED`).
   - `page`, `limit`.
 - **Response (200 OK)**: Paginated array of booking documents populated with counterpart user and listing summary.
 
-### 6.3 `PATCH /api/v1/bookings/:id/status`
-- **Purpose**: Transition booking status (Accept, Propose Reschedule, Decline, Cancel, Complete).
-- **Auth**: Authenticated Customer, Provider, or Admin (Enforces role-based state machine).
-- **Request Body (Provider Accepts)**:
-```json
-{
-  "action": "ACCEPT"
-}
-```
-- **Request Body (Provider Proposes Reschedule)**:
-```json
-{
-  "action": "RESCHEDULE",
-  "proposedDate": "2026-10-26T00:00:00.000Z",
-  "proposedSlot": "AFTERNOON",
-  "note": "Fully booked on the 25th; available Monday afternoon."
-}
-```
-- **Request Body (Decline / Cancel)**:
-```json
-{
-  "action": "DECLINE",
-  "reason": "Outside my current operational radius."
-}
-```
+### 6.3 `GET /api/v1/bookings/:id`
+- **Purpose**: Retrieve a single booking detail by ID.
+- **Auth**: Authenticated Customer, Provider, or Admin. (Enforces participant privacy boundary; returns 403 Forbidden to unrelated users).
+- **Response (200 OK)**: Full populated booking document.
+
+### 6.4 `PATCH /api/v1/bookings/:id/status`
+- **Purpose**: Atomic state machine transitions with concurrency conflict prevention.
+- **Auth**: Authenticated Customer, Provider, or Admin.
+- **Supported Actions**:
+  - `ACCEPT`: Provider accepts pending request.
+  - `REJECT` (or `DECLINE`): Provider declines request with optional reason.
+  - `PROPOSE_ALTERNATIVE` (or `RESCHEDULE`): Provider proposes future `proposedDate`, `proposedSlot`, and optional `note`.
+  - `ACCEPT_ALTERNATIVE`: Customer accepts provider's proposed alternative time.
+  - `DECLINE_ALTERNATIVE`: Customer declines provider's proposed alternative time.
+  - `CANCEL`: Customer or Provider cancels appointment.
+  - `COMPLETE`: Provider marks accepted appointment as completed.
 - **Response (200 OK)**: Updated booking object.
+- **Errors**: `403 Forbidden` (non-participant), `409 Conflict` (racing status update), `422 Unprocessable` (invalid state transition).
 
 ---
 
