@@ -9,6 +9,7 @@ import {
   listingQuerySchema,
   escapeRegex,
   createPropertyListingSchema,
+  createServiceListingSchema,
 } from "@/lib/validations/listing";
 import { requireAuth } from "@/lib/auth-guards";
 import { generateListingSlug } from "@/lib/slug";
@@ -205,98 +206,175 @@ export async function POST(request: NextRequest) {
     const session = await requireAuth();
     const body = await request.json();
 
-    // Strict Zod schema validation
-    const validatedData = createPropertyListingSchema.parse(body);
-
-    // Validate photo URLs originate from trusted storage
-    if (validatedData.photos && validatedData.photos.length > 0) {
-      for (const photo of validatedData.photos) {
-        if (!isTrustedStorageUrl(photo.url)) {
-          throw new ValidationError(
-            `Image URL "${photo.url}" does not originate from authorized marketplace storage.`
-          );
-        }
-      }
-    }
+    const isService = body.type === "SERVICE";
+    const defaultCityCode = process.env.NEXT_PUBLIC_LAUNCH_CITY_CODE || "METRO";
 
     await connectToDatabase();
 
-    // Generate unique slug
-    let slug = generateListingSlug(validatedData.title);
-    let existingSlug = await Listing.findOne({ slug }).select("_id").lean();
-    let attempts = 0;
-    while (existingSlug && attempts < 5) {
-      slug = generateListingSlug(validatedData.title);
-      existingSlug = await Listing.findOne({ slug }).select("_id").lean();
-      attempts++;
+    if (isService) {
+      const validatedData = createServiceListingSchema.parse(body);
+
+      // Validate photo URLs originate from trusted storage
+      if (validatedData.photos && validatedData.photos.length > 0) {
+        for (const photo of validatedData.photos) {
+          if (!isTrustedStorageUrl(photo.url)) {
+            throw new ValidationError(
+              `Image URL "${photo.url}" does not originate from authorized marketplace storage.`
+            );
+          }
+        }
+      }
+
+      // Generate unique slug
+      let slug = generateListingSlug(validatedData.title);
+      let existingSlug = await Listing.findOne({ slug }).select("_id").lean();
+      let attempts = 0;
+      while (existingSlug && attempts < 5) {
+        slug = generateListingSlug(validatedData.title);
+        existingSlug = await Listing.findOne({ slug }).select("_id").lean();
+        attempts++;
+      }
+
+      const photos = (validatedData.photos || []).map((photo, index) => ({
+        ...photo,
+        isPrimary: photo.isPrimary || index === 0,
+      }));
+
+      const newListing = await Listing.create({
+        type: "SERVICE",
+        status: validatedData.status || "PENDING_REVIEW",
+        title: validatedData.title,
+        slug,
+        description: validatedData.description,
+        ownerId: new mongoose.Types.ObjectId(session.user.id),
+        location: {
+          city: validatedData.location.city,
+          cityCode: (validatedData.location.cityCode || defaultCityCode).toUpperCase(),
+          locality: validatedData.location.locality,
+          streetAddress: validatedData.location.streetAddress || null,
+          geo: validatedData.location.geo || { type: "Point", coordinates: [0, 0] },
+        },
+        contactPreferences: {
+          phone: validatedData.contactPreferences?.phone || session.user.phone || null,
+          whatsapp: validatedData.contactPreferences?.whatsapp || session.user.whatsapp || null,
+          showPhone: validatedData.contactPreferences?.showPhone ?? true,
+          showWhatsapp: validatedData.contactPreferences?.showWhatsapp ?? true,
+        },
+        photos,
+        serviceDetails: {
+          category: validatedData.serviceDetails.category,
+          pricingModel: validatedData.serviceDetails.pricingModel,
+          startingPrice: validatedData.serviceDetails.startingPrice,
+          experienceYears: validatedData.serviceDetails.experienceYears,
+          serviceAreas: validatedData.serviceDetails.serviceAreas,
+          workingDays: validatedData.serviceDetails.workingDays,
+          workingHours: validatedData.serviceDetails.workingHours,
+          guarantees: validatedData.serviceDetails.guarantees || undefined,
+        },
+        moderation: {},
+        metrics: { views: 0, contactReveals: 0, savesCount: 0 },
+      });
+
+      return apiSuccess(
+        {
+          id: newListing._id.toString(),
+          slug: newListing.slug,
+          title: newListing.title,
+          status: newListing.status,
+          type: newListing.type,
+          createdAt: newListing.createdAt,
+        },
+        201
+      );
+    } else {
+      // Strict Zod schema validation
+      const validatedData = createPropertyListingSchema.parse(body);
+
+      // Validate photo URLs originate from trusted storage
+      if (validatedData.photos && validatedData.photos.length > 0) {
+        for (const photo of validatedData.photos) {
+          if (!isTrustedStorageUrl(photo.url)) {
+            throw new ValidationError(
+              `Image URL "${photo.url}" does not originate from authorized marketplace storage.`
+            );
+          }
+        }
+      }
+
+      // Generate unique slug
+      let slug = generateListingSlug(validatedData.title);
+      let existingSlug = await Listing.findOne({ slug }).select("_id").lean();
+      let attempts = 0;
+      while (existingSlug && attempts < 5) {
+        slug = generateListingSlug(validatedData.title);
+        existingSlug = await Listing.findOne({ slug }).select("_id").lean();
+        attempts++;
+      }
+
+      // Set primary photo if none marked
+      const photos = (validatedData.photos || []).map((photo, index) => ({
+        ...photo,
+        isPrimary: photo.isPrimary || index === 0,
+      }));
+
+      // Create listing with owner strictly bound to authenticated session user
+      const newListing = await Listing.create({
+        type: "PROPERTY",
+        status: validatedData.status || "PENDING_REVIEW",
+        title: validatedData.title,
+        slug,
+        description: validatedData.description,
+        ownerId: new mongoose.Types.ObjectId(session.user.id),
+        location: {
+          city: validatedData.location.city,
+          cityCode: (validatedData.location.cityCode || defaultCityCode).toUpperCase(),
+          locality: validatedData.location.locality,
+          streetAddress: validatedData.location.streetAddress || null,
+          geo: validatedData.location.geo || { type: "Point", coordinates: [0, 0] },
+        },
+        contactPreferences: {
+          phone: validatedData.contactPreferences?.phone || session.user.phone || null,
+          whatsapp: validatedData.contactPreferences?.whatsapp || session.user.whatsapp || null,
+          showPhone: validatedData.contactPreferences?.showPhone ?? true,
+          showWhatsapp: validatedData.contactPreferences?.showWhatsapp ?? true,
+        },
+        photos,
+        propertyDetails: {
+          purpose: validatedData.propertyDetails.purpose,
+          propertyType: validatedData.propertyDetails.propertyType,
+          price: validatedData.propertyDetails.price,
+          securityDeposit: validatedData.propertyDetails.securityDeposit,
+          maintenanceFee: validatedData.propertyDetails.maintenanceFee,
+          bedrooms: validatedData.propertyDetails.bedrooms,
+          bathrooms: validatedData.propertyDetails.bathrooms,
+          balconies: validatedData.propertyDetails.balconies,
+          carpetArea: validatedData.propertyDetails.carpetArea,
+          superArea: validatedData.propertyDetails.superArea,
+          furnishing: validatedData.propertyDetails.furnishing,
+          floorNumber: validatedData.propertyDetails.floorNumber,
+          totalFloors: validatedData.propertyDetails.totalFloors,
+          amenities: validatedData.propertyDetails.amenities || [],
+          availableFrom: validatedData.propertyDetails.availableFrom
+            ? new Date(validatedData.propertyDetails.availableFrom)
+            : new Date(),
+          preferredTenants: validatedData.propertyDetails.preferredTenants,
+        },
+        moderation: {},
+        metrics: { views: 0, contactReveals: 0, savesCount: 0 },
+      });
+
+      return apiSuccess(
+        {
+          id: newListing._id.toString(),
+          slug: newListing.slug,
+          title: newListing.title,
+          status: newListing.status,
+          type: newListing.type,
+          createdAt: newListing.createdAt,
+        },
+        201
+      );
     }
-
-    const defaultCityCode =
-      process.env.NEXT_PUBLIC_LAUNCH_CITY_CODE || "METRO";
-
-    // Set primary photo if none marked
-    const photos = (validatedData.photos || []).map((photo, index) => ({
-      ...photo,
-      isPrimary: photo.isPrimary || index === 0,
-    }));
-
-    // Create listing with owner strictly bound to authenticated session user
-    const newListing = await Listing.create({
-      type: "PROPERTY",
-      status: validatedData.status || "PENDING_REVIEW",
-      title: validatedData.title,
-      slug,
-      description: validatedData.description,
-      ownerId: new mongoose.Types.ObjectId(session.user.id),
-      location: {
-        city: validatedData.location.city,
-        cityCode: (validatedData.location.cityCode || defaultCityCode).toUpperCase(),
-        locality: validatedData.location.locality,
-        streetAddress: validatedData.location.streetAddress || null,
-        geo: validatedData.location.geo || { type: "Point", coordinates: [0, 0] },
-      },
-      contactPreferences: {
-        phone: validatedData.contactPreferences?.phone || session.user.phone || null,
-        whatsapp: validatedData.contactPreferences?.whatsapp || session.user.whatsapp || null,
-        showPhone: validatedData.contactPreferences?.showPhone ?? true,
-        showWhatsapp: validatedData.contactPreferences?.showWhatsapp ?? true,
-      },
-      photos,
-      propertyDetails: {
-        purpose: validatedData.propertyDetails.purpose,
-        propertyType: validatedData.propertyDetails.propertyType,
-        price: validatedData.propertyDetails.price,
-        securityDeposit: validatedData.propertyDetails.securityDeposit,
-        maintenanceFee: validatedData.propertyDetails.maintenanceFee,
-        bedrooms: validatedData.propertyDetails.bedrooms,
-        bathrooms: validatedData.propertyDetails.bathrooms,
-        balconies: validatedData.propertyDetails.balconies,
-        carpetArea: validatedData.propertyDetails.carpetArea,
-        superArea: validatedData.propertyDetails.superArea,
-        furnishing: validatedData.propertyDetails.furnishing,
-        floorNumber: validatedData.propertyDetails.floorNumber,
-        totalFloors: validatedData.propertyDetails.totalFloors,
-        amenities: validatedData.propertyDetails.amenities || [],
-        availableFrom: validatedData.propertyDetails.availableFrom
-          ? new Date(validatedData.propertyDetails.availableFrom)
-          : new Date(),
-        preferredTenants: validatedData.propertyDetails.preferredTenants,
-      },
-      moderation: {},
-      metrics: { views: 0, contactReveals: 0, savesCount: 0 },
-    });
-
-    return apiSuccess(
-      {
-        id: newListing._id.toString(),
-        slug: newListing.slug,
-        title: newListing.title,
-        status: newListing.status,
-        type: newListing.type,
-        createdAt: newListing.createdAt,
-      },
-      201
-    );
   } catch (error) {
     return handleRouteError(error);
   }

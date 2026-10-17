@@ -4,6 +4,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { requirePageAuth } from "@/lib/auth-guards";
 import { connectToDatabase } from "@/lib/db";
+import mongoose from "mongoose";
 import { Listing } from "@/models/Listing";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -28,11 +29,18 @@ export default async function DashboardPage() {
   const { user } = session;
 
   await connectToDatabase();
-  const propertyCount = await Listing.countDocuments({
-    owner: user.id,
-    type: "PROPERTY",
-    deletedAt: null,
-  });
+  const [propertyCount, serviceCount] = await Promise.all([
+    Listing.countDocuments({
+      ownerId: new mongoose.Types.ObjectId(user.id),
+      type: "PROPERTY",
+      status: { $ne: "ARCHIVED" },
+    }),
+    Listing.countDocuments({
+      ownerId: new mongoose.Types.ObjectId(user.id),
+      type: "SERVICE",
+      status: { $ne: "ARCHIVED" },
+    }),
+  ]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -54,10 +62,15 @@ export default async function DashboardPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2.5">
             <Link href="/dashboard/properties/new">
+              <Button variant="outline" size="sm" leftIcon={<Building2 className="w-4 h-4" />}>
+                Post Property
+              </Button>
+            </Link>
+            <Link href="/dashboard/services/new">
               <Button variant="primary" size="sm" leftIcon={<PlusCircle className="w-4 h-4" />}>
-                Post a Property
+                Post Service
               </Button>
             </Link>
             <Link href="/account/profile">
@@ -89,15 +102,23 @@ export default async function DashboardPage() {
           <ArrowRight className="w-4 h-4 text-muted-text group-hover:text-forest-green group-hover:translate-x-0.5 transition-all" />
         </Link>
 
-        <div className="rounded-xl border border-border-subtle bg-white p-5 shadow-xs flex items-center gap-4 opacity-75">
-          <div className="p-3 rounded-lg bg-light-purple text-purple-900">
-            <Wrench className="w-6 h-6" />
+        <Link
+          href="/dashboard/services"
+          className="rounded-xl border border-border-subtle bg-white p-5 shadow-xs flex items-center justify-between hover:border-purple-600 hover:shadow-sm transition-all group"
+        >
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-lg bg-light-purple text-purple-900 group-hover:scale-105 transition-transform">
+              <Wrench className="w-6 h-6" />
+            </div>
+            <div>
+              <span className="text-xs text-muted-text font-medium">My Services</span>
+              <h3 className="text-xl font-bold text-dark-text">
+                {serviceCount} {serviceCount === 1 ? "Listing" : "Listings"}
+              </h3>
+            </div>
           </div>
-          <div>
-            <span className="text-xs text-muted-text font-medium">My Services</span>
-            <h3 className="text-xl font-bold text-dark-text">0 Active</h3>
-          </div>
-        </div>
+          <ArrowRight className="w-4 h-4 text-muted-text group-hover:text-purple-700 group-hover:translate-x-0.5 transition-all" />
+        </Link>
 
         <div className="rounded-xl border border-border-subtle bg-white p-5 shadow-xs flex items-center gap-4 opacity-75">
           <div className="p-3 rounded-lg bg-emerald-50 text-emerald-800">
@@ -120,28 +141,56 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Property Quick Action Card */}
-      <div className="rounded-2xl border border-border-subtle bg-white p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-        <div className="max-w-xl">
-          <div className="w-10 h-10 rounded-xl bg-light-green text-forest-green flex items-center justify-center mb-3">
-            <Building2 className="w-5 h-5" />
+      {/* Two-Column Action Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Property Quick Action Card */}
+        <div className="rounded-2xl border border-border-subtle bg-white p-6 sm:p-7 flex flex-col justify-between">
+          <div>
+            <div className="w-10 h-10 rounded-xl bg-light-green text-forest-green flex items-center justify-center mb-3">
+              <Building2 className="w-5 h-5" />
+            </div>
+            <h3 className="text-lg font-bold text-dark-text">Property Management</h3>
+            <p className="text-xs text-muted-text mt-1 leading-relaxed">
+              Create and manage listings for rent, sale, or PG/co-living. Upload photos, configure pricing, pause listings, or update terms.
+            </p>
           </div>
-          <h3 className="text-lg font-bold text-dark-text">Property Listing Management</h3>
-          <p className="text-xs text-muted-text mt-1 leading-relaxed">
-            Create and manage your property listings for rent, sale, or PG/co-living. Upload high-resolution photos, manage pricing, pause active listings, or resubmit modified drafts for admin moderation.
-          </p>
+          <div className="flex items-center gap-3 pt-6 mt-4 border-t border-border-subtle">
+            <Link href="/dashboard/properties" className="flex-1">
+              <Button variant="outline" size="sm" className="w-full justify-center">
+                My Properties
+              </Button>
+            </Link>
+            <Link href="/dashboard/properties/new" className="flex-1">
+              <Button variant="primary" size="sm" leftIcon={<PlusCircle className="w-3.5 h-3.5" />} className="w-full justify-center">
+                Post Property
+              </Button>
+            </Link>
+          </div>
         </div>
-        <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
-          <Link href="/dashboard/properties" className="w-full sm:w-auto">
-            <Button variant="outline" size="md" className="w-full sm:w-auto">
-              View My Properties
-            </Button>
-          </Link>
-          <Link href="/dashboard/properties/new" className="w-full sm:w-auto">
-            <Button variant="primary" size="md" leftIcon={<PlusCircle className="w-4 h-4" />} className="w-full sm:w-auto">
-              Post New Property
-            </Button>
-          </Link>
+
+        {/* Service Quick Action Card */}
+        <div className="rounded-2xl border border-border-subtle bg-white p-6 sm:p-7 flex flex-col justify-between">
+          <div>
+            <div className="w-10 h-10 rounded-xl bg-light-purple text-purple-900 flex items-center justify-center mb-3">
+              <Wrench className="w-5 h-5" />
+            </div>
+            <h3 className="text-lg font-bold text-dark-text">Service Provider Management</h3>
+            <p className="text-xs text-muted-text mt-1 leading-relaxed">
+              Offer your skilled trades — plumbing, electrical, cleaning, carpentry, and appliance repairs. Manage your operating hours, rates, and service areas.
+            </p>
+          </div>
+          <div className="flex items-center gap-3 pt-6 mt-4 border-t border-border-subtle">
+            <Link href="/dashboard/services" className="flex-1">
+              <Button variant="outline" size="sm" className="w-full justify-center">
+                My Services
+              </Button>
+            </Link>
+            <Link href="/dashboard/services/new" className="flex-1">
+              <Button variant="primary" size="sm" leftIcon={<PlusCircle className="w-3.5 h-3.5" />} className="w-full justify-center">
+                Post Service
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     </div>

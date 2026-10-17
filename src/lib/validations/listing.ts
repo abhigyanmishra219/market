@@ -225,3 +225,132 @@ export const listingStatusTransitionSchema = z.object({
 
 export type ListingStatusTransitionInput = z.infer<typeof listingStatusTransitionSchema>;
 
+/**
+ * Zod schema for Service details
+ */
+export const serviceCategoryEnum = z.enum([
+  "PLUMBING",
+  "ELECTRICAL",
+  "CARPENTRY",
+  "CLEANING",
+  "PAINTING",
+  "APPLIANCE_REPAIR",
+  "PEST_CONTROL",
+  "MOVERS_PACKERS",
+  "OTHER",
+]);
+
+export const servicePricingModelEnum = z.enum(["FIXED", "HOURLY", "QUOTE_BASED"]);
+
+export const serviceWorkingHoursSchema = z.object({
+  start: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Must be HH:mm format (e.g. 08:00)")
+    .default("08:00"),
+  end: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Must be HH:mm format (e.g. 20:00)")
+    .default("20:00"),
+});
+
+export const serviceDetailsSchema = z
+  .object({
+    category: serviceCategoryEnum,
+    pricingModel: servicePricingModelEnum,
+    startingPrice: z.preprocess(
+      (v) => (v === null || v === "" ? undefined : v),
+      z.coerce
+        .number()
+        .min(0, "Price must be non-negative")
+        .max(10000000, "Price exceeds platform limit")
+        .optional()
+    ),
+    experienceYears: z.coerce
+      .number()
+      .int()
+      .min(0, "Experience cannot be negative")
+      .max(60, "Experience cannot exceed 60 years"),
+    serviceAreas: z
+      .array(z.string().trim().min(2, "Locality must be at least 2 characters"))
+      .min(1, "Select at least 1 service area"),
+    workingDays: z
+      .array(z.enum(["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]))
+      .min(1, "Select at least 1 operating day"),
+    workingHours: serviceWorkingHoursSchema.default({ start: "08:00", end: "20:00" }),
+    guarantees: z.preprocess(
+      (v) => (v === null || v === "" ? undefined : v),
+      z.string().trim().max(500, "Guarantees cannot exceed 500 characters").optional()
+    ),
+  })
+  .refine(
+    (data) => {
+      // If pricingModel is FIXED or HOURLY, startingPrice is required and must be > 0
+      if (
+        (data.pricingModel === "FIXED" || data.pricingModel === "HOURLY") &&
+        (data.startingPrice === undefined || data.startingPrice <= 0)
+      ) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: "Starting / fixed price is required for Fixed or Hourly pricing models",
+      path: ["startingPrice"],
+    }
+  );
+
+export type ServiceDetailsInput = z.infer<typeof serviceDetailsSchema>;
+
+/**
+ * Zod schema for Creating a Service Listing
+ */
+export const createServiceListingSchema = z.object({
+  type: z.literal("SERVICE").default("SERVICE"),
+  status: z.enum(["DRAFT", "PENDING_REVIEW"]).default("PENDING_REVIEW"),
+  title: z
+    .string()
+    .trim()
+    .min(5, "Title must be at least 5 characters")
+    .max(140, "Title cannot exceed 140 characters"),
+  description: z
+    .string()
+    .trim()
+    .min(20, "Description must be at least 20 characters")
+    .max(4000, "Description cannot exceed 4000 characters"),
+  location: listingLocationSchema,
+  contactPreferences: contactPreferencesSchema.default({
+    showPhone: true,
+    showWhatsapp: true,
+  }),
+  photos: z.array(listingPhotoSchema).max(12, "Maximum 12 photos allowed").default([]),
+  serviceDetails: serviceDetailsSchema,
+});
+
+export type CreateServiceListingInput = z.infer<typeof createServiceListingSchema>;
+
+/**
+ * Zod schema for Updating a Service Listing
+ */
+export const updateServiceListingSchema = z.object({
+  status: z.enum(["DRAFT", "PENDING_REVIEW", "PAUSED", "APPROVED", "ARCHIVED"]).optional(),
+  title: z
+    .string()
+    .trim()
+    .min(5, "Title must be at least 5 characters")
+    .max(140, "Title cannot exceed 140 characters")
+    .optional(),
+  description: z
+    .string()
+    .trim()
+    .min(20, "Description must be at least 20 characters")
+    .max(4000, "Description cannot exceed 4000 characters")
+    .optional(),
+  location: listingLocationSchema.optional(),
+  contactPreferences: contactPreferencesSchema.optional(),
+  photos: z.array(listingPhotoSchema).max(12, "Maximum 12 photos allowed").optional(),
+  serviceDetails: serviceDetailsSchema.optional(),
+});
+
+export type UpdateServiceListingInput = z.infer<typeof updateServiceListingSchema>;
+
+

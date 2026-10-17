@@ -9,6 +9,7 @@ import {
   User as UserIcon,
   LayoutDashboard,
   Building2,
+  Wrench,
   ShieldCheck,
   LogOut,
   LogIn,
@@ -133,6 +134,15 @@ export function UserNav() {
             >
               <Building2 className="w-4 h-4 text-forest-green" />
               <span>My Properties</span>
+            </Link>
+
+            <Link
+              href="/dashboard/services"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-dark-text hover:bg-light-purple/30 transition-colors"
+            >
+              <Wrench className="w-4 h-4 text-purple-700" />
+              <span>My Services</span>
             </Link>
 
             {/* Admin Portal Link (Only rendered for authorized ADMIN role) */}

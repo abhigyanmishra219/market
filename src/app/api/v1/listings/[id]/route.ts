@@ -6,7 +6,10 @@ import "@/models/User";
 import { apiSuccess, handleRouteError } from "@/lib/api-response";
 import { NotFoundError, ValidationError, ForbiddenError } from "@/lib/errors";
 import { getCurrentSession, requireAuth, assertOwnership } from "@/lib/auth-guards";
-import { updatePropertyListingSchema } from "@/lib/validations/listing";
+import {
+  updatePropertyListingSchema,
+  updateServiceListingSchema,
+} from "@/lib/validations/listing";
 import { isTrustedStorageUrl } from "@/lib/storage";
 
 export async function GET(
@@ -133,7 +136,10 @@ export async function PATCH(
     assertOwnership(listing.ownerId, session);
 
     const body = await request.json();
-    const validatedData = updatePropertyListingSchema.parse(body);
+    const isService = listing.type === "SERVICE";
+    const validatedData = isService
+      ? updateServiceListingSchema.parse(body)
+      : updatePropertyListingSchema.parse(body);
 
     // Validate photo URLs are from trusted storage
     if (validatedData.photos && validatedData.photos.length > 0) {
@@ -150,7 +156,8 @@ export async function PATCH(
     const isCriticalEdit = Boolean(
       validatedData.title ||
         validatedData.description ||
-        validatedData.propertyDetails ||
+        ("propertyDetails" in validatedData && validatedData.propertyDetails) ||
+        ("serviceDetails" in validatedData && validatedData.serviceDetails) ||
         validatedData.location ||
         validatedData.photos
     );
@@ -217,13 +224,37 @@ export async function PATCH(
       }));
     }
 
-    if (validatedData.propertyDetails && listing.type === "PROPERTY") {
+    if (!isService && "propertyDetails" in validatedData && validatedData.propertyDetails && listing.type === "PROPERTY") {
       listing.propertyDetails = {
         ...listing.propertyDetails,
         ...validatedData.propertyDetails,
         availableFrom: validatedData.propertyDetails.availableFrom
           ? new Date(validatedData.propertyDetails.availableFrom)
           : listing.propertyDetails?.availableFrom || new Date(),
+      };
+    }
+
+    if (isService && "serviceDetails" in validatedData && validatedData.serviceDetails && listing.type === "SERVICE") {
+      listing.serviceDetails = {
+        category: validatedData.serviceDetails.category || listing.serviceDetails?.category || "OTHER",
+        pricingModel: validatedData.serviceDetails.pricingModel || listing.serviceDetails?.pricingModel || "QUOTE_BASED",
+        startingPrice:
+          validatedData.serviceDetails.startingPrice !== undefined
+            ? validatedData.serviceDetails.startingPrice
+            : listing.serviceDetails?.startingPrice,
+        experienceYears:
+          validatedData.serviceDetails.experienceYears !== undefined
+            ? validatedData.serviceDetails.experienceYears
+            : listing.serviceDetails?.experienceYears || 0,
+        serviceAreas: validatedData.serviceDetails.serviceAreas || listing.serviceDetails?.serviceAreas || [],
+        workingDays: validatedData.serviceDetails.workingDays || listing.serviceDetails?.workingDays || [],
+        workingHours:
+          validatedData.serviceDetails.workingHours ||
+          listing.serviceDetails?.workingHours || { start: "08:00", end: "20:00" },
+        guarantees:
+          validatedData.serviceDetails.guarantees !== undefined
+            ? validatedData.serviceDetails.guarantees || undefined
+            : listing.serviceDetails?.guarantees || undefined,
       };
     }
 

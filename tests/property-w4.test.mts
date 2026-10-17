@@ -5,14 +5,11 @@ import { Listing } from "@/models/Listing";
 import { User } from "@/models/User";
 import {
   createPropertyListingSchema,
-  updatePropertyListingSchema,
-  listingStatusTransitionSchema,
 } from "@/lib/validations/listing";
 import {
   validateUploadMetadata,
   isTrustedStorageUrl,
   ALLOWED_MIME_TYPES,
-  MAX_FILE_SIZE,
 } from "@/lib/storage";
 import { ForbiddenError, ValidationError } from "@/lib/errors";
 import { getPublicListings, getPublicListingByIdOrSlug } from "@/lib/listings-data";
