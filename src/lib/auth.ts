@@ -58,10 +58,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         try {
           await connectToDatabase();
           const dbUser = await User.findById(user.id).select(
-            "role status phone whatsapp contactPreferences"
+            "name email role status phone whatsapp contactPreferences"
           );
 
           if (dbUser) {
+            // Safe idempotent admin bootstrap:
+            // Check if server environment has configured ADMIN_EMAIL for initial bootstrap.
+            // Never expose via NEXT_PUBLIC_; normalize with trim().toLowerCase().
+            const configuredAdmin = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+            const normalizedUserEmail = dbUser.email?.trim().toLowerCase();
+
+            if (
+              configuredAdmin &&
+              normalizedUserEmail &&
+              normalizedUserEmail === configuredAdmin &&
+              dbUser.role !== "ADMIN"
+            ) {
+              dbUser.role = "ADMIN";
+              await dbUser.save();
+            }
+
             session.user.role = dbUser.role || "USER";
             session.user.status = dbUser.status || "ACTIVE";
             session.user.phone = dbUser.phone || null;
@@ -78,8 +94,28 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return session;
     },
   },
+  events: {
+    async createUser({ user }) {
+      // Safe bootstrap for first-time account initialization
+      const configuredAdmin = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+      const normalizedUserEmail = user.email?.trim().toLowerCase();
+
+      if (
+        configuredAdmin &&
+        normalizedUserEmail &&
+        normalizedUserEmail === configuredAdmin
+      ) {
+        try {
+          await connectToDatabase();
+          await User.findByIdAndUpdate(user.id, { role: "ADMIN" });
+        } catch (error) {
+          console.error("[AUTH_CREATE_USER_ADMIN_BOOTSTRAP_ERROR]", error);
+        }
+      }
+    },
+  },
   pages: {
-    signIn: "/auth/signin",
-    error: "/auth/signin",
+    signIn: "/login",
+    error: "/login",
   },
 });

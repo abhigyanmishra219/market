@@ -111,7 +111,7 @@ export async function requirePageAuth(currentPath: string): Promise<Session> {
 
   if (!session?.user) {
     const safeCallback = encodeURIComponent(validateSafeRedirect(currentPath, "/dashboard"));
-    redirect(`/auth/signin?callbackUrl=${safeCallback}`);
+    redirect(`/login?callbackUrl=${safeCallback}`);
   }
 
   if (session.user.status === "SUSPENDED") {
@@ -123,16 +123,18 @@ export async function requirePageAuth(currentPath: string): Promise<Session> {
 
 /**
  * Guard for Admin Server Component pages (e.g. /admin/*).
+ * Redirects unauthenticated users to /admin/login?callbackUrl=/admin,
+ * and non-admin authenticated users to /admin/login?error=AccessDenied.
  */
 export async function requirePageAdmin(): Promise<Session> {
   const session = await getCurrentSession();
 
   if (!session?.user) {
-    redirect("/auth/signin?callbackUrl=/admin");
+    redirect("/admin/login?callbackUrl=/admin");
   }
 
   if (session.user.role !== "ADMIN") {
-    redirect("/?error=Forbidden");
+    redirect("/admin/login?error=AccessDenied");
   }
 
   return session;

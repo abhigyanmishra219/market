@@ -9,6 +9,11 @@ import type { NextRequest } from "next/server";
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Dedicated admin login page is public / self-handled
+  if (pathname === "/admin/login") {
+    return NextResponse.next();
+  }
+
   // Protected route patterns
   const isDashboardRoute = pathname.startsWith("/dashboard");
   const isAccountRoute = pathname.startsWith("/account");
@@ -24,9 +29,16 @@ export function proxy(request: NextRequest) {
     request.cookies.get("authjs.session-token")?.value;
 
   if (!sessionToken) {
-    const signInUrl = new URL("/auth/signin", request.url);
+    if (isAdminRoute) {
+      const adminLoginUrl = new URL("/admin/login", request.url);
+      const safeCallback = pathname.startsWith("/") ? pathname : "/admin";
+      adminLoginUrl.searchParams.set("callbackUrl", safeCallback);
+      return NextResponse.redirect(adminLoginUrl);
+    }
+
+    const signInUrl = new URL("/login", request.url);
     // Sanitize callback destination to prevent open redirects
-    const safeCallback = pathname.startsWith("/") ? pathname : "/";
+    const safeCallback = pathname.startsWith("/") ? pathname : "/dashboard";
     signInUrl.searchParams.set("callbackUrl", safeCallback);
     return NextResponse.redirect(signInUrl);
   }

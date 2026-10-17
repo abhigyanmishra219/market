@@ -45,11 +45,13 @@ export function UserNav() {
 
   if (!session?.user) {
     return (
-      <Link href="/auth/signin">
-        <Button variant="primary" size="sm" leftIcon={<LogIn className="w-4 h-4" />}>
-          Sign In
-        </Button>
-      </Link>
+      <div className="flex items-center gap-2">
+        <Link href="/login">
+          <Button variant="primary" size="sm" leftIcon={<LogIn className="w-4 h-4" />}>
+            Sign In
+          </Button>
+        </Link>
+      </div>
     );
   }
 

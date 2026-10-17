@@ -171,16 +171,27 @@ export function Header() {
                 </button>
               </>
             ) : (
-              <Link href="/auth/signin" onClick={() => setMobileMenuOpen(false)}>
-                <Button
-                  variant="primary"
-                  size="md"
-                  className="w-full justify-center"
-                  leftIcon={<LogIn className="w-4 h-4" />}
-                >
-                  Sign In with Google
-                </Button>
-              </Link>
+              <div className="flex flex-col gap-2">
+                <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
+                  <Button
+                    variant="primary"
+                    size="md"
+                    className="w-full justify-center"
+                    leftIcon={<LogIn className="w-4 h-4" />}
+                  >
+                    Sign In with Google
+                  </Button>
+                </Link>
+                <Link href="/create-account" onClick={() => setMobileMenuOpen(false)}>
+                  <Button
+                    variant="outline"
+                    size="md"
+                    className="w-full justify-center"
+                  >
+                    Create Account
+                  </Button>
+                </Link>
+              </div>
             )}
           </div>
         </div>
