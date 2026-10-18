@@ -48,6 +48,21 @@ export function ServiceFilters({ totalCount }: ServiceFiltersProps) {
   const [localMinPrice, setLocalMinPrice] = useState(minPrice);
   const [localMaxPrice, setLocalMaxPrice] = useState(maxPrice);
 
+  // Synchronize local input state whenever URL search parameters change during render
+  const [prevParams, setPrevParams] = useState({ locality, search, minPrice, maxPrice });
+  if (
+    locality !== prevParams.locality ||
+    search !== prevParams.search ||
+    minPrice !== prevParams.minPrice ||
+    maxPrice !== prevParams.maxPrice
+  ) {
+    setPrevParams({ locality, search, minPrice, maxPrice });
+    setLocalLocality(locality);
+    setLocalSearch(search);
+    setLocalMinPrice(minPrice);
+    setLocalMaxPrice(maxPrice);
+  }
+
   const updateFilters = (updates: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString());
     params.delete("page");
@@ -147,26 +162,38 @@ export function ServiceFilters({ totalCount }: ServiceFiltersProps) {
         <form onSubmit={handleApplyTextFilters} className="flex flex-col gap-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div>
-              <label className="block text-[11px] font-semibold text-dark-text uppercase tracking-wider mb-1">
+              <label htmlFor="service-search-keyword" className="block text-[11px] font-semibold text-dark-text uppercase tracking-wider mb-1">
                 Search Service
               </label>
               <Input
+                id="service-search-keyword"
                 placeholder="Plumber, electrician, wiring..."
                 value={localSearch}
                 onChange={(e) => setLocalSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleApplyTextFilters(e);
+                  }
+                }}
                 leftIcon={<Search className="w-3.5 h-3.5" />}
                 className="h-9 text-xs"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-dark-text uppercase tracking-wider mb-1">
+              <label htmlFor="service-search-locality" className="block text-[11px] font-semibold text-dark-text uppercase tracking-wider mb-1">
                 Service Area / Locality
               </label>
               <Input
+                id="service-search-locality"
                 placeholder="Neighborhood covered..."
                 value={localLocality}
                 onChange={(e) => setLocalLocality(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleApplyTextFilters(e);
+                  }
+                }}
                 leftIcon={<MapPin className="w-3.5 h-3.5" />}
                 className="h-9 text-xs"
               />

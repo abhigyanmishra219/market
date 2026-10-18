@@ -38,12 +38,15 @@ export default async function ProfilePage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <div className="mb-8">
+    <div className="space-y-6">
+      <div className="rounded-2xl border border-border-subtle bg-white p-6 sm:p-7 shadow-xs">
+        <span className="text-xs font-semibold text-forest-green uppercase tracking-wider block mb-1">
+          Identity & Contact Channels
+        </span>
         <h1 className="text-2xl sm:text-3xl font-bold text-dark-text tracking-tight">
-          Account Profile & Settings
+          Account Profile & Contact Details
         </h1>
-        <p className="text-sm text-muted-text mt-1">
+        <p className="text-xs text-muted-text mt-1 max-w-xl">
           Review your verified identity and configure communication channels for your marketplace listings.
         </p>
       </div>

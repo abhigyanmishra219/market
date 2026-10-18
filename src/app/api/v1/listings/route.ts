@@ -7,15 +7,15 @@ import "@/models/User";
 import { apiSuccess, handleRouteError } from "@/lib/api-response";
 import {
   listingQuerySchema,
-  escapeRegex,
   createPropertyListingSchema,
   createServiceListingSchema,
 } from "@/lib/validations/listing";
 import { requireAuth } from "@/lib/auth-guards";
 import { generateListingSlug } from "@/lib/slug";
-import { isTrustedStorageUrl } from "@/lib/storage";
+import { isTrustedStorageUrl, verifyStorageFileExists } from "@/lib/storage";
 import { ValidationError } from "@/lib/errors";
 import { ListingSummary } from "@/types/listing";
+import { buildListingFilter } from "@/lib/listings-data";
 
 export async function GET(request: NextRequest) {
   try {
@@ -43,90 +43,7 @@ export async function GET(request: NextRequest) {
 
     await connectToDatabase();
 
-    // Base filter: STRICTLY only APPROVED listings
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const filter: Record<string, any> = {
-      status: "APPROVED",
-    };
-
-    if (query.type) {
-      filter.type = query.type;
-    }
-
-    // Default to configured launch city if cityCode is not passed
-    const activeCityCode = query.cityCode || process.env.NEXT_PUBLIC_LAUNCH_CITY_CODE;
-    if (activeCityCode && activeCityCode !== "ALL") {
-      filter["location.cityCode"] = activeCityCode.toUpperCase();
-    }
-
-    if (query.locality) {
-      filter["location.locality"] = {
-        $regex: escapeRegex(query.locality),
-        $options: "i",
-      };
-    }
-
-    if (query.search) {
-      const safeSearch = escapeRegex(query.search);
-      filter.$or = [
-        { title: { $regex: safeSearch, $options: "i" } },
-        { description: { $regex: safeSearch, $options: "i" } },
-        { "location.locality": { $regex: safeSearch, $options: "i" } },
-      ];
-    }
-
-    // Property-specific filters
-    if (query.purpose) {
-      filter["propertyDetails.purpose"] = query.purpose;
-    }
-
-    if (query.propertyType) {
-      const types = query.propertyType
-        .split(",")
-        .map((t) => t.trim().toUpperCase())
-        .filter(Boolean);
-      if (types.length > 0) {
-        filter["propertyDetails.propertyType"] = { $in: types };
-      }
-    }
-
-    if (query.bedrooms) {
-      const bArray = query.bedrooms
-        .split(",")
-        .map((b) => parseInt(b.trim(), 10))
-        .filter((n) => !isNaN(n));
-      if (bArray.length > 0) {
-        // If 4 is included, could also include 4+ in future, but exact array matching satisfies spec
-        filter["propertyDetails.bedrooms"] = { $in: bArray };
-      }
-    }
-
-    if (query.furnishing) {
-      filter["propertyDetails.furnishing"] = query.furnishing;
-    }
-
-    // Service-specific filters
-    if (query.category) {
-      filter["serviceDetails.category"] = query.category;
-    }
-
-    if (query.pricingModel) {
-      filter["serviceDetails.pricingModel"] = query.pricingModel;
-    }
-
-    // Price range filters
-    if (query.minPrice !== undefined || query.maxPrice !== undefined) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const priceBounds: Record<string, any> = {};
-      if (query.minPrice !== undefined) priceBounds.$gte = query.minPrice;
-      if (query.maxPrice !== undefined) priceBounds.$lte = query.maxPrice;
-
-      if (query.type === "SERVICE") {
-        filter["serviceDetails.startingPrice"] = priceBounds;
-      } else {
-        filter["propertyDetails.price"] = priceBounds;
-      }
-    }
+    const filter = buildListingFilter(query);
 
     // Sorting
     const sortMultiplier = query.sortOrder === "asc" ? 1 : -1;
@@ -214,12 +131,18 @@ export async function POST(request: NextRequest) {
     if (isService) {
       const validatedData = createServiceListingSchema.parse(body);
 
-      // Validate photo URLs originate from trusted storage
+      // Validate photo URLs originate from trusted storage and exist
       if (validatedData.photos && validatedData.photos.length > 0) {
         for (const photo of validatedData.photos) {
           if (!isTrustedStorageUrl(photo.url)) {
             throw new ValidationError(
               `Image URL "${photo.url}" does not originate from authorized marketplace storage.`
+            );
+          }
+          const exists = await verifyStorageFileExists(photo.url);
+          if (!exists) {
+            throw new ValidationError(
+              `Referenced image "${photo.url}" does not exist in authorized storage. Please re-upload.`
             );
           }
         }
@@ -290,12 +213,18 @@ export async function POST(request: NextRequest) {
       // Strict Zod schema validation
       const validatedData = createPropertyListingSchema.parse(body);
 
-      // Validate photo URLs originate from trusted storage
+      // Validate photo URLs originate from trusted storage and exist
       if (validatedData.photos && validatedData.photos.length > 0) {
         for (const photo of validatedData.photos) {
           if (!isTrustedStorageUrl(photo.url)) {
             throw new ValidationError(
               `Image URL "${photo.url}" does not originate from authorized marketplace storage.`
+            );
+          }
+          const exists = await verifyStorageFileExists(photo.url);
+          if (!exists) {
+            throw new ValidationError(
+              `Referenced image "${photo.url}" does not exist in authorized storage. Please re-upload.`
             );
           }
         }

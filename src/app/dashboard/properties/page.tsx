@@ -63,9 +63,9 @@ export default async function OwnerPropertiesPage() {
   }));
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+    <div className="space-y-6">
       {/* Breadcrumb Navigation */}
-      <nav className="flex items-center gap-1.5 text-xs text-muted-text mb-6">
+      <nav className="flex items-center gap-1.5 text-xs text-muted-text">
         <Link href="/" className="hover:text-forest-green flex items-center gap-1">
           <Home className="w-3.5 h-3.5" /> Home
         </Link>
@@ -78,7 +78,7 @@ export default async function OwnerPropertiesPage() {
       </nav>
 
       {/* Header Banner */}
-      <div className="rounded-2xl border border-border-subtle bg-white p-6 sm:p-8 mb-8 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="rounded-2xl border border-border-subtle bg-white p-6 sm:p-7 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs font-semibold text-forest-green">Real Estate Inventory</span>

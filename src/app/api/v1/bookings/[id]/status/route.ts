@@ -85,7 +85,7 @@ export async function PATCH(
             },
           },
         },
-        { new: true }
+        { returnDocument: "after" }
       );
 
       if (!updated) {
@@ -144,7 +144,7 @@ export async function PATCH(
             },
           },
         },
-        { new: true }
+        { returnDocument: "after" }
       );
 
       if (!updated) {
@@ -207,7 +207,7 @@ export async function PATCH(
             },
           },
         },
-        { new: true }
+        { returnDocument: "after" }
       );
 
       if (!updated) {
@@ -267,7 +267,7 @@ export async function PATCH(
             },
           },
         },
-        { new: true }
+        { returnDocument: "after" }
       );
 
       if (!updated) {
@@ -317,7 +317,7 @@ export async function PATCH(
             },
           },
         },
-        { new: true }
+        { returnDocument: "after" }
       );
 
       if (!updated) {
@@ -375,7 +375,7 @@ export async function PATCH(
             },
           },
         },
-        { new: true }
+        { returnDocument: "after" }
       );
 
       if (!updated) {
@@ -430,7 +430,7 @@ export async function PATCH(
             },
           },
         },
-        { new: true }
+        { returnDocument: "after" }
       );
 
       if (!updated) {

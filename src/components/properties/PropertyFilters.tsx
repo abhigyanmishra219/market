@@ -42,6 +42,21 @@ export function PropertyFilters({ totalCount }: PropertyFiltersProps) {
   const [localMinPrice, setLocalMinPrice] = useState(minPrice);
   const [localMaxPrice, setLocalMaxPrice] = useState(maxPrice);
 
+  // Synchronize local input state whenever URL search parameters change during render
+  const [prevParams, setPrevParams] = useState({ locality, search, minPrice, maxPrice });
+  if (
+    locality !== prevParams.locality ||
+    search !== prevParams.search ||
+    minPrice !== prevParams.minPrice ||
+    maxPrice !== prevParams.maxPrice
+  ) {
+    setPrevParams({ locality, search, minPrice, maxPrice });
+    setLocalLocality(locality);
+    setLocalSearch(search);
+    setLocalMinPrice(minPrice);
+    setLocalMaxPrice(maxPrice);
+  }
+
   const updateFilters = (updates: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString());
 
@@ -193,13 +208,19 @@ export function PropertyFilters({ totalCount }: PropertyFiltersProps) {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {/* Search Keyword */}
             <div>
-              <label className="block text-[11px] font-semibold text-dark-text uppercase tracking-wider mb-1">
+              <label htmlFor="property-search-keyword" className="block text-[11px] font-semibold text-dark-text uppercase tracking-wider mb-1">
                 Search Keyword
               </label>
               <Input
+                id="property-search-keyword"
                 placeholder="Title or description..."
                 value={localSearch}
                 onChange={(e) => setLocalSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleApplyTextFilters(e);
+                  }
+                }}
                 leftIcon={<Search className="w-3.5 h-3.5" />}
                 className="h-9 text-xs"
               />
@@ -207,13 +228,19 @@ export function PropertyFilters({ totalCount }: PropertyFiltersProps) {
 
             {/* Locality Search */}
             <div>
-              <label className="block text-[11px] font-semibold text-dark-text uppercase tracking-wider mb-1">
+              <label htmlFor="property-search-locality" className="block text-[11px] font-semibold text-dark-text uppercase tracking-wider mb-1">
                 Locality / Area
               </label>
               <Input
+                id="property-search-locality"
                 placeholder="Neighborhood or sector..."
                 value={localLocality}
                 onChange={(e) => setLocalLocality(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleApplyTextFilters(e);
+                  }
+                }}
                 leftIcon={<MapPin className="w-3.5 h-3.5" />}
                 className="h-9 text-xs"
               />

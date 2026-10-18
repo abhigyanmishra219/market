@@ -10,7 +10,7 @@ import {
   updatePropertyListingSchema,
   updateServiceListingSchema,
 } from "@/lib/validations/listing";
-import { isTrustedStorageUrl } from "@/lib/storage";
+import { isTrustedStorageUrl, verifyStorageFileExists } from "@/lib/storage";
 
 export async function GET(
   _request: NextRequest,
@@ -141,12 +141,18 @@ export async function PATCH(
       ? updateServiceListingSchema.parse(body)
       : updatePropertyListingSchema.parse(body);
 
-    // Validate photo URLs are from trusted storage
+    // Validate photo URLs are from trusted storage and exist
     if (validatedData.photos && validatedData.photos.length > 0) {
       for (const photo of validatedData.photos) {
         if (!isTrustedStorageUrl(photo.url)) {
           throw new ValidationError(
             `Image URL "${photo.url}" does not originate from authorized marketplace storage.`
+          );
+        }
+        const exists = await verifyStorageFileExists(photo.url);
+        if (!exists) {
+          throw new ValidationError(
+            `Referenced image "${photo.url}" does not exist in authorized storage. Please re-upload.`
           );
         }
       }

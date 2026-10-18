@@ -1,6 +1,7 @@
 import { connectToDatabase } from "@/lib/db";
 import { Listing } from "@/models/Listing";
 import { User } from "@/models/User";
+import { Report } from "@/models/Report";
 import { apiSuccess, handleRouteError } from "@/lib/api-response";
 import { requireAdmin } from "@/lib/auth-guards";
 
@@ -11,7 +12,7 @@ export async function GET() {
 
     await connectToDatabase();
 
-    // Query real statistics using Promise.all for fast concurrent execution
+    // Query real statistics concurrently from actual database collections
     const [
       propertiesTotal,
       servicesTotal,
@@ -24,6 +25,8 @@ export async function GET() {
       pausedTotal,
       archivedTotal,
       usersTotal,
+      openReports,
+      resolvedReports,
     ] = await Promise.all([
       Listing.countDocuments({ type: "PROPERTY" }),
       Listing.countDocuments({ type: "SERVICE" }),
@@ -36,6 +39,8 @@ export async function GET() {
       Listing.countDocuments({ status: "PAUSED" }),
       Listing.countDocuments({ status: "ARCHIVED" }),
       User.countDocuments(),
+      Report.countDocuments({ status: "OPEN" }),
+      Report.countDocuments({ status: "RESOLVED" }),
     ]);
 
     return apiSuccess({
@@ -53,6 +58,8 @@ export async function GET() {
       pausedTotal,
       archivedTotal,
       usersTotal,
+      openReports,
+      resolvedReports,
       generatedAt: new Date().toISOString(),
     });
   } catch (error) {

@@ -2,14 +2,15 @@ import { NextRequest } from "next/server";
 import mongoose from "mongoose";
 import { connectToDatabase } from "@/lib/db";
 import { Listing } from "@/models/Listing";
+import { AuditLog, AuditAction } from "@/models/AuditLog";
 import { apiSuccess, handleRouteError } from "@/lib/api-response";
-import { NotFoundError } from "@/lib/errors";
+import { NotFoundError, ConflictError } from "@/lib/errors";
 import { requireAdmin } from "@/lib/auth-guards";
 import { z } from "zod";
 
 const adminModerateSchema = z
   .object({
-    action: z.enum(["APPROVE", "REJECT"]),
+    action: z.enum(["APPROVE", "REJECT", "ARCHIVE", "PAUSE"]),
     rejectionReason: z.string().trim().max(500).optional(),
   })
   .refine(
@@ -43,42 +44,100 @@ export async function PATCH(
 
     await connectToDatabase();
 
-    const listing = await Listing.findById(id);
-
-    if (!listing) {
+    const currentListing = await Listing.findById(id);
+    if (!currentListing) {
       throw new NotFoundError("Listing not found");
     }
 
+    const previousStatus = currentListing.status;
     const adminObjectId = new mongoose.Types.ObjectId(session.user.id);
     const now = new Date();
 
-    if (action === "APPROVE") {
-      listing.status = "APPROVED";
-      listing.moderation = {
-        reviewedBy: adminObjectId,
-        reviewedAt: now,
-        rejectionReason: null,
-      };
-    } else if (action === "REJECT") {
-      listing.status = "REJECTED";
-      listing.moderation = {
-        reviewedBy: adminObjectId,
-        reviewedAt: now,
-        rejectionReason: rejectionReason!,
-      };
+    let targetStatus: "APPROVED" | "REJECTED" | "ARCHIVED" | "PAUSED";
+    let auditAction: AuditAction;
+    const updateQuery: Record<string, unknown> = {};
+
+    switch (action) {
+      case "APPROVE":
+        targetStatus = "APPROVED";
+        auditAction = "APPROVE_LISTING";
+        updateQuery.$set = {
+          status: "APPROVED",
+          moderation: {
+            reviewedBy: adminObjectId,
+            reviewedAt: now,
+            rejectionReason: null,
+          },
+        };
+        break;
+
+      case "REJECT":
+        targetStatus = "REJECTED";
+        auditAction = "REJECT_LISTING";
+        updateQuery.$set = {
+          status: "REJECTED",
+          moderation: {
+            reviewedBy: adminObjectId,
+            reviewedAt: now,
+            rejectionReason: rejectionReason!,
+          },
+        };
+        break;
+
+      case "ARCHIVE":
+        targetStatus = "ARCHIVED";
+        auditAction = "ARCHIVE_LISTING";
+        updateQuery.$set = {
+          status: "ARCHIVED",
+        };
+        break;
+
+      case "PAUSE":
+        targetStatus = "PAUSED";
+        auditAction = "PAUSE_LISTING";
+        updateQuery.$set = {
+          status: "PAUSED",
+        };
+        break;
     }
 
-    await listing.save();
+    // Atomic update preventing conflicting concurrent moderation actions
+    const updatedListing = await Listing.findOneAndUpdate(
+      {
+        _id: currentListing._id,
+        status: previousStatus, // Only update if status hasn't changed concurrently
+      },
+      updateQuery,
+      { returnDocument: "after" }
+    );
+
+    if (!updatedListing) {
+      throw new ConflictError(
+        "Listing was concurrently updated by another moderation action. Please refresh the queue."
+      );
+    }
+
+    // Record immutable audit log entry
+    await AuditLog.create({
+      adminUserId: adminObjectId,
+      action: auditAction,
+      targetCollection: "listings",
+      targetId: updatedListing._id,
+      previousState: { status: previousStatus },
+      newState: { status: targetStatus },
+      reason: rejectionReason || null,
+      createdAt: now,
+    });
 
     return apiSuccess({
-      id: listing._id.toString(),
-      type: listing.type,
-      status: listing.status,
-      title: listing.title,
+      id: updatedListing._id.toString(),
+      type: updatedListing.type,
+      status: updatedListing.status,
+      title: updatedListing.title,
       moderation: {
         reviewedBy: session.user.id,
         reviewedAt: now.toISOString(),
-        rejectionReason: listing.moderation.rejectionReason,
+        rejectionReason: updatedListing.moderation?.rejectionReason || null,
       },
     });
   } catch (error) {

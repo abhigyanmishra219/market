@@ -114,15 +114,6 @@ export function UserNav() {
           {/* Links */}
           <div className="py-1">
             <Link
-              href="/account/profile"
-              onClick={() => setIsOpen(false)}
-              className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-dark-text hover:bg-light-green/30 transition-colors"
-            >
-              <UserIcon className="w-4 h-4 text-forest-green" />
-              <span>Profile & Settings</span>
-            </Link>
-
-            <Link
               href="/dashboard"
               onClick={() => setIsOpen(false)}
               className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-dark-text hover:bg-light-green/30 transition-colors"
@@ -165,6 +156,24 @@ export function UserNav() {
             >
               <Inbox className="w-4 h-4 text-forest-green" />
               <span>Incoming Bookings</span>
+            </Link>
+
+            <Link
+              href="/account/profile"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-dark-text hover:bg-light-green/30 transition-colors"
+            >
+              <UserIcon className="w-4 h-4 text-forest-green" />
+              <span>Profile & Contacts</span>
+            </Link>
+
+            <Link
+              href="/account/settings"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-dark-text hover:bg-light-green/30 transition-colors"
+            >
+              <ShieldCheck className="w-4 h-4 text-forest-green" />
+              <span>Account Settings</span>
             </Link>
 
             {/* Admin Portal Link (Only rendered for authorized ADMIN role) */}

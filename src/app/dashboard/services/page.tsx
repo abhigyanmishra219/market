@@ -76,9 +76,9 @@ export default async function OwnerServicesPage() {
   }));
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+    <div className="space-y-6">
       {/* Breadcrumb Navigation */}
-      <nav aria-label="Breadcrumb" className="mb-6">
+      <nav aria-label="Breadcrumb">
         <ol className="flex items-center gap-2 text-xs text-muted-text">
           <li>
             <Link
@@ -107,7 +107,7 @@ export default async function OwnerServicesPage() {
       </nav>
 
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-border-subtle bg-white p-6 sm:p-7 shadow-xs">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
             <div className="p-1.5 rounded-md bg-light-purple text-purple-900">

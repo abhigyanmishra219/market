@@ -11,11 +11,11 @@ import {
 } from "@/components/admin/AdminModerationDashboard";
 
 export const metadata: Metadata = {
-  title: "Admin Moderation Console — Marketplace",
-  description: "Administrative moderation and user governance portal.",
+  title: "Admin Dashboard & Overview — Marketplace",
+  description: "Platform governance, listing approvals, and marketplace operations.",
 };
 
-export default async function AdminPage() {
+export default async function AdminOverviewPage() {
   await connection();
   const session = await requirePageAdmin();
   const { user } = session;
@@ -67,7 +67,7 @@ export default async function AdminPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+    <div className="space-y-6">
       <AdminModerationDashboard
         initialMetrics={initialMetrics}
         adminUser={{

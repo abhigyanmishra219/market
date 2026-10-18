@@ -38,8 +38,15 @@ export default async function PropertiesPage({ searchParams }: PropertiesPagePro
   const furnishing = typeof resolvedParams.furnishing === "string" ? (resolvedParams.furnishing as FurnishingStatus) : undefined;
   const locality = typeof resolvedParams.locality === "string" ? resolvedParams.locality : undefined;
   const search = typeof resolvedParams.search === "string" ? resolvedParams.search : undefined;
-  const minPrice = typeof resolvedParams.minPrice === "string" ? parseFloat(resolvedParams.minPrice) : undefined;
-  const maxPrice = typeof resolvedParams.maxPrice === "string" ? parseFloat(resolvedParams.maxPrice) : undefined;
+  const cityCode = typeof resolvedParams.cityCode === "string" ? resolvedParams.cityCode : undefined;
+  const minPrice =
+    typeof resolvedParams.minPrice === "string" && !isNaN(parseFloat(resolvedParams.minPrice))
+      ? parseFloat(resolvedParams.minPrice)
+      : undefined;
+  const maxPrice =
+    typeof resolvedParams.maxPrice === "string" && !isNaN(parseFloat(resolvedParams.maxPrice))
+      ? parseFloat(resolvedParams.maxPrice)
+      : undefined;
   const sortBy = typeof resolvedParams.sortBy === "string" && ["createdAt", "price", "title"].includes(resolvedParams.sortBy)
     ? (resolvedParams.sortBy as "createdAt" | "price" | "title")
     : "createdAt";
@@ -58,6 +65,7 @@ export default async function PropertiesPage({ searchParams }: PropertiesPagePro
     furnishing,
     locality,
     search,
+    cityCode,
     minPrice,
     maxPrice,
     sortBy,

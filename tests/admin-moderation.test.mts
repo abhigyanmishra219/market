@@ -433,12 +433,12 @@ async function runAdminModerationTestSuite() {
       Listing.findOneAndUpdate(
         { _id: propertyListing._id, status: "PENDING_REVIEW" },
         { status: "APPROVED", "moderation.reviewedAt": new Date() },
-        { new: true }
+        { returnDocument: "after" }
       ),
       Listing.findOneAndUpdate(
         { _id: propertyListing._id, status: "PENDING_REVIEW" },
         { status: "REJECTED", "moderation.rejectionReason": "Conflict test", "moderation.reviewedAt": new Date() },
-        { new: true }
+        { returnDocument: "after" }
       ),
     ];
     const results = await Promise.all(concurrentActions);

@@ -285,8 +285,10 @@ const ListingSchema = new Schema<IListing>(
   }
 );
 
-// Indexes defined per Section 2.5 of database-schema.md
+// Indexes defined per Section 2.5 of database-schema.md and search performance
 ListingSchema.index({ type: 1, status: 1, "location.cityCode": 1, createdAt: -1 });
+ListingSchema.index({ status: 1, "location.city": 1, "location.locality": 1 });
+ListingSchema.index({ status: 1, type: 1, "location.city": 1 });
 ListingSchema.index({ status: 1, "propertyDetails.purpose": 1, "propertyDetails.price": 1 });
 ListingSchema.index({ status: 1, "propertyDetails.bedrooms": 1 });
 ListingSchema.index({ status: 1, "serviceDetails.category": 1, "serviceDetails.startingPrice": 1 });

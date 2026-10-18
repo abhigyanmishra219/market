@@ -376,7 +376,7 @@ async function runServiceW5TestSuite() {
       phone: "+1-555-7788",
       whatsapp: "+1-555-7788",
     },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: "after" }
   );
   assert(Boolean(providerUser._id), "Test provider user initialized in MongoDB");
 
